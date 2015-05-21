@@ -2,31 +2,33 @@
 
 # comannd amount user
 function add_user () {
-	newid=`tail -1 $USERDB|gawk -v FPAT='([^,]+)|(\"[^\"]+\")' -e '{print $1}'`
+	newid=$(tail -1 "${USERDB}"|gawk -v FPAT='([^,]+)|(\"[^\"]+\")' -e '{print $1}')
 	echo "$newid"
-	newid=`expr $newid + 1`
-	echo "$newid,$1,\"$2\",0,0,0,0" >> $USERDB
+	newid=$((newid + 1))
+	echo "$newid,$1,\"$2\",0,0,0,0" >> "${USERDB}"
 }
 
 USERDB="user.csv"
-current=`grep "$2" $USERDB`
+current=$(grep "$2" $USERDB)
+#shellcheck disable=SC2034
 AWKOPT=""
 
-echo $current
-if [ ! $current ]; then
-	add_user $2 "$3"
-	current=`grep "$2" $USERDB`
+echo "${current}"
+if [ ! "${current}" ]; then
+	add_user "${2}" "${3}"
+	current=$(grep "${2}" "${USERDB}")
 fi
 
-balance=`echo $current | gawk -v FPAT='([^,]+)|(\"[^\"]+\")' -e '{print $4}'`
-echo $balance
-newbalance=`expr $balance - \( $1 \)`
+balance=$(echo "${current}" | gawk -v FPAT='([^,]+)|(\"[^\"]+\")' -e '{print $4}')
+echo "${balance}"
+price="${1}"
+newbalance=$((balance - price))
 echo $newbalance
 
 if [ $newbalance -ge 0 ]; then
-	next=`echo $current | gawk -v FPAT='([^,]+)|(\"[^\"]+\")' -e '{print $1 "," $2 "," $3 ",'$newbalance'," $5 "," $6 "," $7 }'`
-	echo `date` ": s/"$current"/"$next"/" >> sed.log
-	sed -i -e "s/"$current"/"$next"/" user.csv
+	next=$(echo "${current}" | gawk -v FPAT='([^,]+)|(\"[^\"]+\")' -e '{print $1 "," $2 "," $3 ",'$newbalance'," $5 "," $6 "," $7 }')
+	echo "$(date) : s/${current}/${next}/" >> sed.log
+	sed -i -e "s/${current}/${next}/" user.csv
 	exit 0
 else
 	exit 1
